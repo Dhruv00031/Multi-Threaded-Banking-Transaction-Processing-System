@@ -1,0 +1,22 @@
+# Maven and compiled output
+**/target/
+**/build/
+**/out/
+*.class
+*.jar
+
+# Local environment files
+.env
+.env.*
+!.env.example
+
+# IDE and editor files
+.idea/
+*.iml
+*.swp
+*.swo
+*~
+
+# Operating system files
+.DS_Store
+Thumbs.db
