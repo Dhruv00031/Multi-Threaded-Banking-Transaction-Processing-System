@@ -32,6 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.mock;
@@ -127,6 +128,25 @@ class TransactionProcessorTest {
     }
 
     @Test
+    void transferLocksAccountsInSortedIdOrder() {
+        when(accountRepository.findByIdForUpdate("ACC-1"))
+                .thenReturn(Optional.of(account("ACC-1", "50.00", "ACTIVE")));
+        when(accountRepository.findByIdForUpdate("ACC-2"))
+                .thenReturn(Optional.of(account("ACC-2", "200.00", "ACTIVE")));
+        when(accountRepository.updateBalance("ACC-2", new BigDecimal("125.00"))).thenReturn(true);
+        when(accountRepository.updateBalance("ACC-1", new BigDecimal("125.00"))).thenReturn(true);
+        when(transactionRepository.findById("TXN-13"))
+                .thenReturn(Optional.of(transaction("TXN-13", TransactionType.TRANSFER)));
+
+        processor.process(command(
+                "TXN-13", TransactionType.TRANSFER, "75.00", "ACC-2", "ACC-1"));
+
+        org.mockito.InOrder lockOrder = inOrder(accountRepository);
+        lockOrder.verify(accountRepository).findByIdForUpdate("ACC-1");
+        lockOrder.verify(accountRepository).findByIdForUpdate("ACC-2");
+    }
+
+    @Test
     void transferToUnknownAccountFailsBeforeCreatingTransaction() {
         when(accountRepository.findByIdForUpdate("ACC-1"))
                 .thenReturn(Optional.of(account("ACC-1", "200.00", "ACTIVE")));
@@ -142,6 +162,19 @@ class TransactionProcessorTest {
     void transferToSameAccountIsRejected() {
         assertThrows(InvalidTransactionException.class, () -> processor.process(command(
                 "TXN-6", TransactionType.TRANSFER, "10.00", "ACC-1", "ACC-1")));
+        verify(accountRepository, never()).findByIdForUpdate(any());
+        verify(transactionRepository, never()).save(any());
+    }
+
+    @Test
+    void nonPositiveOrOverPrecisionAmountsAreRejectedBeforeDatabaseAccess() {
+        assertThrows(InvalidTransactionException.class, () -> processor.process(command(
+                "TXN-10", TransactionType.DEPOSIT, "0.00", null, "ACC-1")));
+        assertThrows(InvalidTransactionException.class, () -> processor.process(command(
+                "TXN-11", TransactionType.DEPOSIT, "-1.00", null, "ACC-1")));
+        assertThrows(InvalidTransactionException.class, () -> processor.process(command(
+                "TXN-12", TransactionType.DEPOSIT, "1.001", null, "ACC-1")));
+
         verify(accountRepository, never()).findByIdForUpdate(any());
         verify(transactionRepository, never()).save(any());
     }
