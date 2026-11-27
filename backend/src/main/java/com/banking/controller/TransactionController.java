@@ -5,6 +5,7 @@ import com.banking.dto.TransactionResponse;
 import com.banking.dto.TransferRequest;
 import com.banking.dto.WithdrawalRequest;
 import com.banking.model.Transaction;
+import com.banking.service.TransactionExecutorStats;
 import com.banking.service.TransactionService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -44,5 +45,10 @@ public class TransactionController {
     @GetMapping("/{transactionId}")
     public Transaction getTransaction(@PathVariable String transactionId) {
         return transactionService.getTransaction(transactionId);
+    }
+
+    @GetMapping("/executor/stats")
+    public TransactionExecutorStats getExecutorStats() {
+        return transactionService.getExecutorStats();
     }
 }

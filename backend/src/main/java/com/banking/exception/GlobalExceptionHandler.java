@@ -103,6 +103,13 @@ public class GlobalExceptionHandler {
         return error(HttpStatus.CONFLICT, "The request conflicts with existing data", request);
     }
 
+    @ExceptionHandler(TransactionProcessingUnavailableException.class)
+    public ResponseEntity<ApiErrorResponse> handleTransactionProcessingUnavailable(
+            TransactionProcessingUnavailableException exception,
+            HttpServletRequest request) {
+        return error(HttpStatus.SERVICE_UNAVAILABLE, exception.getMessage(), request);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiErrorResponse> handleUnexpectedFailure(
             Exception exception,

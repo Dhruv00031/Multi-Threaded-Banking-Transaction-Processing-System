@@ -61,4 +61,19 @@ class GlobalExceptionHandlerTest {
                 .andExpect(jsonPath("$.status").value(500))
                 .andExpect(jsonPath("$.message").value("An unexpected error occurred"));
     }
+
+    @Test
+    void unavailableTransactionExecutorReturnsServiceUnavailable() throws Exception {
+        when(transactionService.deposit(org.mockito.ArgumentMatchers.any()))
+                .thenThrow(TransactionProcessingUnavailableException.executorUnavailable());
+
+        mockMvc.perform(post("/api/transactions/deposit")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"transactionId\":\"TXN-503\","
+                                + "\"accountId\":\"ACC-1\",\"amount\":10.00}"))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.status").value(503))
+                .andExpect(jsonPath("$.message").value(
+                        "Transaction processing is temporarily unavailable; please try again later"));
+    }
 }
