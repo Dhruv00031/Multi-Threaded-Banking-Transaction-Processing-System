@@ -1,4 +1,4 @@
-package com.banking.exception;
+jdbc:mysql://localhost:3306/banking_test_dbpackage com.banking.exception;
 
 import com.banking.service.AccountService;
 import com.banking.service.CustomerService;
